@@ -1,10 +1,13 @@
-import * as React from 'react';
+// // import * as React from 'react';
 
-import LoginPage from '~/components/pages/LoginPage';
+// import IFrame from "~/components/pages/IFrame";
 
-export default function Screen() {
+// // import LoginPage from '~/components/pages/LoginPage';
 
-  return (
-      <LoginPage/>
-  );
-}
+// export default function Screen() {
+
+//   return (
+//       // <LoginPage/>
+//       <IFrame/>
+//   );
+// }
