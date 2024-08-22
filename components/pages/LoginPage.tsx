@@ -18,37 +18,34 @@ const LoginPage: React.FC = () => {
     const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
 
     useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const themeSetting = await AsyncStorage.getItem('theme');
-                if (themeSetting) {
-                    setIsDarkMode(themeSetting === 'dark');
-                }
-            } catch (error) {
-                Alert.alert('Error', 'Failed to load theme settings');
-            }
-        };
-
         fetchSettings();
-    }, []);
-
-    useEffect(() => {
-        const fetchLoginTime = async () => {
-            try {
-                const storedTime = await AsyncStorage.getItem('loginTime');
-                if (storedTime) {
-                    const loginDate = new Date(storedTime);
-                    setLoginTime(formatTime(loginDate));
-                    await calculateLogoutTime(loginDate);
-                    setShowLoginButton(false); // Hide login button if login time is present
-                }
-            } catch (error) {
-                Alert.alert('Error', 'Failed to load login time');
-            }
-        };
         fetchLoginTime();
     }, []);
 
+    const fetchSettings = async () => {
+        try {
+            const themeSetting = await AsyncStorage.getItem('theme');
+            if (themeSetting) {
+                setIsDarkMode(themeSetting === 'dark');
+            }
+        } catch (error) {
+            Alert.alert('Error', 'Failed to load theme settings');
+        }
+    };
+
+    const fetchLoginTime = async () => {
+        try {
+            const storedTime = await AsyncStorage.getItem('loginTime');
+            if (storedTime) {
+                const loginDate = new Date(storedTime);
+                setLoginTime(formatTime(loginDate));
+                await calculateLogoutTime(loginDate);
+                setShowLoginButton(false); // Hide login button if login time is present
+            }
+        } catch (error) {
+            Alert.alert('Error', 'Failed to load login time');
+        }
+    };
     useEffect(() => {
         if (isBreakActive) {
             timerRef.current = setInterval(() => {
@@ -136,7 +133,7 @@ const LoginPage: React.FC = () => {
                 const breakStartDate = new Date(breakStart);
                 const breakEndDate = new Date();
                 const duration = calculateDuration(breakStartDate, breakEndDate);
-                
+
                 const newRecord = {
                     start: breakStartDate.toISOString(),
                     end: breakEndDate.toISOString(),
@@ -145,7 +142,7 @@ const LoginPage: React.FC = () => {
 
                 const updatedRecords = [...breakRecords, newRecord];
                 await AsyncStorage.setItem('breakRecords', JSON.stringify(updatedRecords));
-                setBreakRecords(updatedRecords);
+                setBreakRecords(updatedRecords); // This should trigger a re-render
 
                 setBreakDuration(duration);
                 await AsyncStorage.removeItem('breakStartTime'); // Clear break start time
@@ -173,106 +170,109 @@ const LoginPage: React.FC = () => {
         return `${hours}h ${minutes}m ${seconds}s`;
     };
 
-    return (
-        <View className='flex-1 justify-center items-center gap-5 p-6 bg-secondary/30'>
-            <Card className='w-full max-w-sm p-4 rounded-2xl'>
-                <CardHeader className='items-center'>
-                    <CardTitle className='pb-2 text-center text-base'>{new Date().toLocaleDateString()}</CardTitle>
-                </CardHeader>
+    // Helper function to format date and time
+    const formatDate = (dateString: string): string => {
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    };
 
-                {
-                    loginTime ? (
-                        <>
-                            <CardContent>
-                                <View className='flex-col justify-center items-center gap-3'>
-                                    <View className='flex-row items-start'>
-                                        <Text className='text-sm text-muted-foreground'>Login Time:- </Text>
-                                        <Text className='text-sm text-secondary-foreground'>{loginTime}</Text>
-                                    </View>
-                                    <View className='flex-row items-start'>
-                                        <Text className='text-sm text-muted-foreground'>Logout Time:- </Text>
-                                        <Text className='text-sm text-secondary-foreground'>{logoutTime}</Text>
-                                    </View>
-                                    {breakStartTime && (
-                                        <View className='mt-4'>
-                                            <Text className='text-sm text-muted-foreground'>Break Started At:</Text>
-                                            <Text className='text-sm text-secondary-foreground'>{breakStartTime}</Text>
-                                            <Text className='text-sm text-muted-foreground'>Timer:</Text>
-                                            <Text className='text-sm text-secondary-foreground'>{formatTimer(timer)}</Text>
+    return (
+        <ScrollView className='w-full max-w-sm mt-4'>
+            <View className='flex-1 justify-center gap-2 p-6 bg-secondary/30'>
+                <Card className='w-full max-w-sm p-4 rounded-2xl'>
+                    <CardHeader className='items-center'>
+                        <CardTitle className='pb-2 text-center text-base'>{new Date().toLocaleDateString()}</CardTitle>
+                    </CardHeader>
+
+                    {
+                        loginTime ? (
+                            <>
+                                <CardContent>
+                                    <View className='flex-col justify-center items-center gap-3'>
+                                        <View className='flex-row items-start'>
+                                            <Text className='text-sm text-muted-foreground'>Login Time:- </Text>
+                                            <Text className='text-sm text-secondary-foreground'>{loginTime}</Text>
                                         </View>
-                                    )}
-                                    {breakStartTime ? (
-                                        <Button
-                                            variant='outline'
-                                            className='shadow shadow-foreground/5 bg-red-600 text-lg h-[6rem] w-[6rem] rounded-2xl'
-                                            onPress={handleBreakStop}
-                                        >
-                                            <Text className='text-accent-foreground'>Break Stop</Text>
-                                        </Button>
-                                    ) : (
-                                        showBreakButton && (
+                                        <View className='flex-row items-start'>
+                                            <Text className='text-sm text-muted-foreground'>Logout Time:- </Text>
+                                            <Text className='text-sm text-secondary-foreground'>{logoutTime}</Text>
+                                        </View>
+                                        {breakStartTime && (
+                                            <View className='mt-4'>
+                                                <Text className='text-sm text-muted-foreground'>Break Started At:</Text>
+                                                <Text className='text-sm text-secondary-foreground'>{breakStartTime}</Text>
+                                                <Text className='text-sm text-muted-foreground'>Timer:</Text>
+                                                <Text className='text-sm text-secondary-foreground'>{formatTimer(timer)}</Text>
+                                            </View>
+                                        )}
+                                        {breakStartTime ? (
                                             <Button
                                                 variant='outline'
-                                                className='shadow shadow-foreground/5 bg-blue-600 text-lg h-[6rem] w-[6rem] rounded-2xl'
-                                                onPress={handleBreakStart}
+                                                className='shadow shadow-foreground/5 bg-red-600 text-lg h-[6rem] w-[6rem] rounded-2xl'
+                                                onPress={handleBreakStop}
                                             >
-                                                <Text className='text-accent-foreground'>Break Start</Text>
+                                                <Text className='text-accent-foreground'>Break Stop</Text>
                                             </Button>
-                                        )
-                                    )}
-                                    {breakDuration && (
-                                        <View className='mt-4'>
-                                            <Text className='text-sm text-muted-foreground'>Break Duration:</Text>
-                                            <Text className='text-sm text-secondary-foreground'>{breakDuration}</Text>
-                                        </View>
-                                    )}
-                                </View>
-                            </CardContent>
-                        </>
-                    ) : (
-                        <View className='flex-col justify-center items-center gap-3'>
-                            <Button
-                                variant='outline'
-                                className='shadow shadow-foreground/5 bg-blue-500 text-lg h-[6rem] w-[6rem] rounded-2xl'
-                                onPress={handleLogin}
-                            >
-                                <Text>Login</Text>
-                            </Button>
-                        </View>
-                    )
-                }
-            </Card>
-
-            <ScrollView className='w-full max-w-sm mt-4'>
-                <Card className='w-full p-4 rounded-2xl'>
-                    <CardHeader>
-                        <CardTitle className='text-base text-center'>Break Records</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <View className='border-t border-muted'>
-                            {breakRecords.length === 0 ? (
-                                <Text className='text-center text-muted-foreground'>No break records found</Text>
-                            ) : (
-                                breakRecords.map((record, index) => (
-                                    <View key={index} className='flex-row justify-between p-2 border-b border-muted'>
-                                        <Text className='text-sm text-muted-foreground'>{formatDate(record.start)}</Text>
-                                        <Text className='text-sm text-muted-foreground'>{formatDate(record.end)}</Text>
-                                        <Text className='text-sm text-secondary-foreground'>{record.duration}</Text>
+                                        ) : (
+                                            showBreakButton && (
+                                                <Button
+                                                    variant='outline'
+                                                    className='shadow shadow-foreground/5 bg-blue-600 text-lg h-[6rem] w-[6rem] rounded-2xl'
+                                                    onPress={handleBreakStart}
+                                                >
+                                                    <Text className='text-accent-foreground'>Break Start</Text>
+                                                </Button>
+                                            )
+                                        )}
+                                        {breakDuration && (
+                                            <View className='mt-4'>
+                                                <Text className='text-sm text-muted-foreground'>Break Duration:</Text>
+                                                <Text className='text-sm text-secondary-foreground'>{breakDuration}</Text>
+                                            </View>
+                                        )}
                                     </View>
-                                ))
-                            )}
-                        </View>
-                    </CardContent>
+                                </CardContent>
+                            </>
+                        ) : (
+                            <View className='flex-col justify-center items-center gap-3'>
+                                <Button
+                                    variant='outline'
+                                    className='shadow shadow-foreground/5 bg-blue-500 text-lg h-[6rem] w-[6rem] rounded-2xl'
+                                    onPress={handleLogin}
+                                >
+                                    <Text>Login</Text>
+                                </Button>
+                            </View>
+                        )
+                    }
                 </Card>
-            </ScrollView>
-        </View>
+
+                <ScrollView className='w-full max-w-sm mt-4'>
+                    <Card className='w-full p-4 rounded-2xl'>
+                        <CardHeader>
+                            <CardTitle className='text-base text-center'>Break Records</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <View className='border-t border-muted'>
+                                {breakRecords.length === 0 ? (
+                                    <Text className='text-center text-muted-foreground'>No break records found</Text>
+                                ) : (
+                                    breakRecords.map((record, index) => (
+                                        <View key={index} className='flex-row justify-between p-2 border-b border-muted'>
+                                            <Text className='text-sm text-muted-foreground'>{formatDate(record.start)}</Text>
+                                            <Text className='text-sm text-muted-foreground'>{formatDate(record.end)}</Text>
+                                            <Text className='text-sm text-secondary-foreground'>{record.duration}</Text>
+                                        </View>
+                                    ))
+                                )}
+                            </View>
+                        </CardContent>
+                    </Card>
+                </ScrollView>
+            </View>
+        </ScrollView>
     );
 };
 
-// Helper function to format date and time
-const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
-};
 
 export default LoginPage;
